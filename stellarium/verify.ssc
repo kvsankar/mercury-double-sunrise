@@ -1,0 +1,38 @@
+// Print the Sun's altitude from Mercury at the times compute.py predicts,
+// then quit. Run with: stellarium --startup-script verify.ssc
+// The results go to output.txt in Stellarium's user data directory.
+
+core.setTimeRate(0);
+core.setObserverLocation(90.10, 0, 0, 0, "Mercury 90.1E", "Mercury");
+LandscapeMgr.setCurrentLandscapeID("zero");
+LandscapeMgr.setFlagAtmosphere(false);
+core.wait(1);
+
+var checks = [
+    ["2026-11-03T04:43:00", "centre rise, expect 0"],
+    ["2026-11-06T07:10:00", "reversal starts, expect +0.56"],
+    ["2026-11-10T08:28:00", "centre set, expect 0"],
+    ["2026-11-14T09:46:00", "reversal ends, expect -0.56"],
+    ["2026-11-17T12:14:00", "centre rise, expect 0"]
+];
+
+function report(label) {
+    for (var i = 0; i < checks.length; i++) {
+        core.setDate(checks[i][0], "utc");
+        core.wait(0.5);
+        var info = core.getObjectInfo("Sun");
+        core.output(label + " " + checks[i][0] + "Z  Sun alt " +
+                    info["altitude"].toFixed(3) + "  az " +
+                    info["azimuth"].toFixed(3) + "  geom alt " + info["altitude-geometric"].toFixed(3) + "  (" + checks[i][1] + ")");
+    }
+}
+
+report("lon +90.10");
+StelSkyDrawer.setAtmospherePressure(0);
+core.wait(0.5);
+report("p=0 lon +90.10");
+core.setObserverLocation(-89.90, 0, 0, 0, "Mercury 89.9W", "Mercury");
+core.wait(1);
+report("lon -89.90");
+core.quitStellarium();
+

@@ -1,0 +1,106 @@
+//
+// Name: Mercury's double sunrise (November 2026)
+// Author: kvsankar
+// License: Public Domain
+// Description: Stand on Mercury's equator at 89.24 E and watch the Sun
+//   peek over the eastern horizon, stop, sink back below it, and rise
+//   again, around the perihelion of 2026-11-10. Times come from
+//   compute.py (JPL DE440s and the IAU rotation model Stellarium uses).
+//
+
+// ---- Settings ------------------------------------------------------------
+// Site and times for the perihelion of 2026-11-10 08:28 UTC.
+// For other perihelia, take the "double sunrise (full)" lines printed by
+// compute.py. For a double sunset, use that site and look west (AZ = 270).
+var LON = 89.24;            // planetocentric, degrees east
+var LAT = 0.0;
+var AZ = 90.0;              // look east
+var START = "2026-11-02T12:00:00";
+var END = "2026-11-21T00:00:00";
+var RATE = 20000;           // simulation seconds per real second (~80 s run)
+// Top edge of the Sun crossing the horizon (UTC), and what it means.
+var EVENTS = [
+    ["2026-11-03T04:43:00", "First sunrise: the top of the Sun appears"],
+    ["2026-11-06T07:10:00", "The Sun stops, 0.56 deg up, and turns back"],
+    ["2026-11-10T08:28:00", "Perihelion: the Sun sets again in the east"],
+    ["2026-11-14T09:46:00", "The Sun stops below the horizon and turns"],
+    ["2026-11-17T12:14:00", "Second sunrise"],
+    ["2026-11-20T09:29:00", "The whole Sun is above the horizon"]
+];
+// true: save screenshots at SNAP_TIMES into SHOT_DIR and quit, instead of
+// animating. An empty SHOT_DIR means Stellarium's screenshot folder.
+var SNAPSHOTS = false;
+var SHOT_DIR = "";
+var SNAP_TIMES = [
+    ["2026-11-02T12:00:00", "Before sunrise"],
+    ["2026-11-06T07:10:00", "Highest point of the first sunrise"],
+    ["2026-11-12T00:00:00", "Set again: the Sun is below the horizon"],
+    ["2026-11-14T09:46:00", "Lowest point, then it turns back"],
+    ["2026-11-18T12:00:00", "Second sunrise"],
+    ["2026-11-21T00:00:00", "The whole Sun is up"]
+];
+// --------------------------------------------------------------------------
+
+core.clear("natural");
+core.setTimeRate(0);
+// Choose the landscape first: changing it later can move the observer back
+// to the landscape's own location on Earth.
+LandscapeMgr.setFlagLandscapeSetsLocation(false);
+LandscapeMgr.setCurrentLandscapeID("zero");
+LandscapeMgr.setFlagLandscape(true);
+core.wait(1);
+core.setObserverLocation(LON, LAT, 0, 0, "Mercury equator " + LON + " E",
+                         "Mercury");
+core.wait(1);
+var where = core.getObserverLocationInfo();
+core.output("Observer: " + where["planet"] + " lon " + where["longitude"] +
+            " lat " + where["latitude"]);
+LandscapeMgr.setFlagAtmosphere(false);
+LandscapeMgr.setFlagFog(false);
+LandscapeMgr.setFlagCardinalPoints(true);
+// Mercury has no air. Stellarium otherwise bends light as Earth's air
+// does, which lifts the Sun by about 0.48 deg at the horizon.
+StelSkyDrawer.setAtmospherePressure(0);
+GridLinesMgr.setFlagHorizonLine(true);
+GridLinesMgr.setFlagAzimuthalGrid(true);
+StelMovementMgr.setFlagTracking(false);
+core.setDate(START, "utc");
+core.wait(1);
+StelMovementMgr.zoomTo(3.5, 0);
+core.moveToAltAzi(0.2, AZ, 0);
+core.wait(1);
+
+var title = LabelMgr.labelScreen(
+    "Mercury, equator " + LON + " E, looking east. Flat horizon, no air.",
+    20, 40, true, 20, "#ffffff");
+var phase = -1;
+
+function showPhase(text) {
+    if (phase >= 0) LabelMgr.deleteLabel(phase);
+    phase = LabelMgr.labelScreen(text, 20, 70, true, 24, "#ffd27f");
+}
+
+if (SNAPSHOTS) {
+    for (var i = 0; i < SNAP_TIMES.length; i++) {
+        core.setDate(SNAP_TIMES[i][0], "utc");
+        showPhase(SNAP_TIMES[i][0] + "Z  " + SNAP_TIMES[i][1]);
+        core.wait(1);
+        core.screenshot("mercury-" + i + "-", false, SHOT_DIR, true);
+        core.wait(1);
+    }
+    core.quitStellarium();
+} else {
+    showPhase("Before sunrise");
+    core.setTimeRate(RATE);
+    var endJd = core.jdFromDateString(END, "utc");
+    var next = 0;
+    while (core.getJDay() < endJd) {
+        if (next < EVENTS.length &&
+            core.getJDay() >= core.jdFromDateString(EVENTS[next][0], "utc")) {
+            showPhase(EVENTS[next][1]);
+            next++;
+        }
+        core.wait(0.1);
+    }
+    core.setTimeRate(0);
+}
