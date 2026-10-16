@@ -8,7 +8,12 @@ see it for themselves. It does two things:
 - It gives a [Stellarium](https://stellarium.org/) script that shows one,
   as seen from Mercury's surface.
 
-![The top of the Sun above Mercury's eastern horizon on 2026-11-06, in Stellarium](screenshots/mercury-1-.png)
+![Animation in Stellarium: from Mercury's equator at 89.24 E, the top of the Sun comes up, sets again, and comes up for good, 2 to 21 November 2026](video/mercury-double-sunrise-2026-11.gif)
+
+The animation covers 2 to 21 November 2026, as seen from Mercury's equator
+at 89.24 E. The full-size video is
+[video/mercury-double-sunrise-2026-11.mp4](video/mercury-double-sunrise-2026-11.mp4)
+(10 seconds, 1280 × 720 pixels).
 
 ## Why it happens
 
@@ -152,7 +157,12 @@ ffmpeg -framerate 30 -i frame-%04d-.png -c:v libx264 -pix_fmt yuv420p -crf 20 me
 ```
 
 [video/mercury-double-sunrise-2026-11.mp4](video/mercury-double-sunrise-2026-11.mp4)
-is the result for the 2026 event: 10 seconds at 1280 × 720 pixels.
+is the result for the 2026 event: 10 seconds at 1280 × 720 pixels. The
+animation at the top of this page comes from that video:
+
+```bash
+ffmpeg -i mercury-double-sunrise.mp4 -vf "fps=12,scale=640:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=64:stats_mode=diff[p];[b][p]paletteuse=dither=none:diff_mode=rectangle" -loop 0 mercury-double-sunrise.gif
+```
 
 ### Why the script sets the air pressure to 0
 
