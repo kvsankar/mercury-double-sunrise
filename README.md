@@ -138,6 +138,22 @@ The [screenshots](screenshots/) folder has these images for the 2026 event:
 | Second sunrise, 2026-11-18 12:00 UTC | [mercury-4-.png](screenshots/mercury-4-.png) |
 | Whole Sun up, 2026-11-21 00:00 UTC | [mercury-5-.png](screenshots/mercury-5-.png) |
 
+### Make a video
+
+Set `FRAMES = 300` and set `SHOT_DIR` to an empty folder. Stellarium may
+refuse to write screenshots outside its own folder. To allow it, set
+`flag_allow_screenshots_dir = true` in the `[scripts]` section of
+Stellarium's `config.ini`. The script then saves 300 evenly spaced frames
+from `START` to `END` and quits. Combine the frames with
+[ffmpeg](https://ffmpeg.org/), from inside `SHOT_DIR`:
+
+```bash
+ffmpeg -framerate 30 -i frame-%04d-.png -c:v libx264 -pix_fmt yuv420p -crf 20 mercury-double-sunrise.mp4
+```
+
+[video/mercury-double-sunrise-2026-11.mp4](video/mercury-double-sunrise-2026-11.mp4)
+is the result for the 2026 event: 10 seconds at 1280 × 720 pixels.
+
 ### Why the script sets the air pressure to 0
 
 Stellarium bends light near the horizon as Earth's air does, even on

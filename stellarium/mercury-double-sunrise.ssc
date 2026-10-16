@@ -39,6 +39,9 @@ var SNAP_TIMES = [
     ["2026-11-18T12:00:00", "Second sunrise"],
     ["2026-11-21T00:00:00", "The whole Sun is up"]
 ];
+// More than 0: save this many evenly spaced frames from START to END into
+// SHOT_DIR and quit, for a video. Combine them with ffmpeg (see README).
+var FRAMES = 0;
 // --------------------------------------------------------------------------
 
 core.clear("natural");
@@ -67,7 +70,7 @@ StelMovementMgr.setFlagTracking(false);
 core.setDate(START, "utc");
 core.wait(1);
 StelMovementMgr.zoomTo(3.5, 0);
-core.moveToAltAzi(0.2, AZ, 0);
+core.moveToAltAzi(0.6, AZ, 0);
 core.wait(1);
 
 var title = LabelMgr.labelScreen(
@@ -87,6 +90,34 @@ if (SNAPSHOTS) {
         core.wait(1);
         core.screenshot("mercury-" + i + "-", false, SHOT_DIR, true);
         core.wait(1);
+    }
+    core.quitStellarium();
+} else if (FRAMES > 0) {
+    core.setGuiVisible(false);
+    // Make the labels once and change only their text, because a new label
+    // fades in over about a second.
+    showPhase("Before sunrise");
+    var clock = LabelMgr.labelScreen(START, 20, 100, true, 20, "#ffffff");
+    core.wait(2);
+    var startJd = core.jdFromDateString(START, "utc");
+    var stepJd = (core.jdFromDateString(END, "utc") - startJd) / (FRAMES - 1);
+    var shown = -1;
+    for (var f = 0; f < FRAMES; f++) {
+        var jd = startJd + f * stepJd;
+        core.setJDay(jd);
+        var k = -1;
+        for (var e = 0; e < EVENTS.length; e++) {
+            if (jd >= core.jdFromDateString(EVENTS[e][0], "utc")) k = e;
+        }
+        if (k != shown) {
+            LabelMgr.setLabelText(phase, EVENTS[k][1]);
+            shown = k;
+        }
+        LabelMgr.setLabelText(clock, core.getDate("utc").substr(0, 16)
+                                     .replace("T", " ") + " UTC");
+        core.wait(0.05);
+        var n = ("0000" + f).slice(-4);
+        core.screenshot("frame-" + n + "-", false, SHOT_DIR, true);
     }
     core.quitStellarium();
 } else {
